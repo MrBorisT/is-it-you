@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bxv3ppyoe5ikc"]
+
+[ext_resource type="Script" uid="uid://bkj0gos47pd05" path="res://scripts/npc.gd" id="1_nh2m4"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_tcuxl"]
+
+[node name="NPC" type="CharacterBody2D" unique_id=1531136827]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_nh2m4")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1506337604]
+shape = SubResource("CircleShape2D_tcuxl")

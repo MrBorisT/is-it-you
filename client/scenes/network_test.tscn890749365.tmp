@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://dy8a687a10hv6"]
+
+[ext_resource type="Script" uid="uid://gyng3w7nivid" path="res://scripts/network_client.gd" id="1_y54cu"]
+[ext_resource type="Script" uid="uid://dymxf0txidqa8" path="res://scripts/player.gd" id="3_wyr6b"]
+[ext_resource type="PackedScene" uid="uid://cj6bcyhsuk1o1" path="res://scenes/network_player.tscn" id="4_h52vw"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_yqjtg"]
+radius = 10.15
+
+[node name="Game" type="Node2D" unique_id=619399765]
+script = ExtResource("1_y54cu")
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=1174477228]
+position = Vector2(100, 270)
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("3_wyr6b")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1620503346]
+shape = SubResource("CircleShape2D_yqjtg")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=528133280]
+
+[node name="StatusLabel" type="Label" parent="CanvasLayer" unique_id=1923285731]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 266.0
+offset_bottom = 43.0
+text = "Reach the finish. Don't get shot."
+
+[node name="NetworkClient" type="Node" parent="." unique_id=2082303623]
+script = ExtResource("1_y54cu")
+player_scene = ExtResource("4_h52vw")

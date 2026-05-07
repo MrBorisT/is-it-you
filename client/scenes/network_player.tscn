@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cj6bcyhsuk1o1"]
+
+[ext_resource type="Script" uid="uid://cib27vfm7wlke" path="res://scripts/network_player.gd" id="1_27uls"]
+
+[node name="NetworkPlayer" type="Node2D" unique_id=1455642960]
+script = ExtResource("1_27uls")
