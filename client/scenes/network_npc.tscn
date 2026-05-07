@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bne1wn8du6d0y"]
+
+[ext_resource type="Script" uid="uid://c4r48bmsmib4f" path="res://scripts/network_npc.gd" id="1_tiqnp"]
+
+[node name="NetworkNPC" type="Node2D" unique_id=804689521]
+script = ExtResource("1_tiqnp")

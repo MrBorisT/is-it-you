@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dy8a687a10hv6"]
 
 [ext_resource type="Script" uid="uid://gyng3w7nivid" path="res://scripts/network_client.gd" id="1_y54cu"]
+[ext_resource type="PackedScene" uid="uid://bne1wn8du6d0y" path="res://scenes/network_npc.tscn" id="3_502go"]
 [ext_resource type="Script" uid="uid://bn0r12l1wfjl5" path="res://scripts/finish_node.gd" id="3_y54cu"]
 [ext_resource type="Script" uid="uid://cb6f3uyf3qvbp" path="res://scripts/crosshair.gd" id="4_502go"]
 [ext_resource type="PackedScene" uid="uid://cj6bcyhsuk1o1" path="res://scenes/network_player.tscn" id="4_h52vw"]
@@ -19,8 +20,11 @@ text = "Reach the finish. Don't get shot."
 [node name="NetworkClient" type="Node" parent="." unique_id=2082303623]
 script = ExtResource("1_y54cu")
 player_scene = ExtResource("4_h52vw")
+npc_scene = ExtResource("3_502go")
 
 [node name="Players" type="Node2D" parent="." unique_id=614451012]
+
+[node name="NPCs" type="Node2D" parent="." unique_id=1188207920]
 
 [node name="FinishNode" type="Node2D" parent="." unique_id=1132831445]
 script = ExtResource("3_y54cu")

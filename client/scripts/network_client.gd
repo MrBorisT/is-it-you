@@ -2,15 +2,18 @@ extends Node
 
 @export var server_url := "ws://localhost:8080/ws"
 @export var player_scene: PackedScene
+@export var npc_scene: PackedScene
 
 @onready var players_root := $"../Players"
 @onready var status_label := $"../CanvasLayer/StatusLabel"
+@onready var npcs_root: Node2D = $"../NPCs"
 
 var socket := WebSocketPeer.new()
 var connected := false
 var my_player_id := ""
 
 var player_nodes := {}
+var npc_nodes := {}
 
 @export var finish_x := 900.0
 
@@ -157,9 +160,52 @@ func handle_state(msg: Dictionary):
 				alive,
 				has_bullet
 			)
-
+			
 	remove_missing_players(seen_ids)
+	
+	var npcs: Array = msg.get("npcs", [])
+	handle_npcs_state(npcs)
+	
 	update_status_text()
+
+func handle_npcs_state(npcs: Array):
+	var seen_ids := {}
+
+	for npc_data in npcs:
+		var id := str(npc_data.get("id", ""))
+		var x := float(npc_data.get("x", 0.0))
+		var y := float(npc_data.get("y", 0.0))
+		var alive := bool(npc_data.get("alive", true))
+		var reached_finish := bool(npc_data.get("reached_finish", false))
+
+		seen_ids[id] = true
+
+		if not npc_nodes.has(id):
+			spawn_npc_node(id)
+
+		var node = npc_nodes[id]
+		node.global_position = Vector2(x, y)
+
+		if node.has_method("set_npc_data"):
+			node.set_npc_data(id, alive, reached_finish)
+
+	remove_missing_npcs(seen_ids)
+
+func spawn_npc_node(id: String):
+	var node = npc_scene.instantiate()
+	npcs_root.add_child(node)
+	npc_nodes[id] = node
+
+func remove_missing_npcs(seen_ids: Dictionary):
+	var ids_to_remove := []
+
+	for id in npc_nodes.keys():
+		if not seen_ids.has(id):
+			ids_to_remove.append(id)
+
+	for id in ids_to_remove:
+		npc_nodes[id].queue_free()
+		npc_nodes.erase(id)
 
 func update_status_text():
 	if game_over:

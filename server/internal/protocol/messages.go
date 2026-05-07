@@ -24,6 +24,15 @@ type ServerMessage struct {
 	Type     string        `json:"type"`
 	PlayerID string        `json:"player_id,omitempty"`
 	Players  []PlayerState `json:"players,omitempty"`
+	NPCs     []NPCState    `json:"npcs,omitempty"`
 	GameOver bool          `json:"game_over,omitempty"`
 	WinnerID string        `json:"winner_id,omitempty"`
+}
+
+type NPCState struct {
+	ID            string  `json:"id"`
+	X             float64 `json:"x"`
+	Y             float64 `json:"y"`
+	Alive         bool    `json:"alive"`
+	ReachedFinish bool    `json:"reached_finish"`
 }

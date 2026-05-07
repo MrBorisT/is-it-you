@@ -1,6 +1,8 @@
 package game
 
 import (
+	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -18,20 +20,55 @@ const (
 	WalkSpeed = 80.0
 	RunSpeed  = 180.0
 	HitRadius = 18.0
+
+	NPCCount     = 25
+	NPCWalkSpeed = 55.0
+	NPCMinStep   = 15.0
+	NPCMaxStep   = 70.0
+	NPCMinWait   = 0.3
+	NPCMaxWait   = 1.8
+	NPCMinY      = 140.0
+	NPCMaxY      = 420.0
 )
 
 type Game struct {
 	mu sync.Mutex
 
 	players map[string]*Player
+	npcs    map[string]*NPC
 
 	gameOver bool
 	winnerID string
+
+	rng *rand.Rand
 }
 
 func NewGame() *Game {
-	return &Game{
+	g := &Game{
 		players: make(map[string]*Player),
+		npcs:    make(map[string]*NPC),
+		rng:     rand.New(rand.NewSource(time.Now().UnixNano())),
+	}
+
+	g.spawnNPCs()
+
+	return g
+}
+
+func (g *Game) spawnNPCs() {
+	for i := 0; i < NPCCount; i++ {
+		id := fmt.Sprintf("n%d", i+1)
+
+		y := NPCMinY + g.rng.Float64()*(NPCMaxY-NPCMinY)
+
+		g.npcs[id] = &NPC{
+			ID:        id,
+			X:         StartX,
+			Y:         y,
+			Alive:     true,
+			TargetX:   StartX,
+			WaitTimer: randomRange(g.rng, NPCMinWait, NPCMaxWait),
+		}
 	}
 }
 
@@ -123,9 +160,22 @@ func (g *Game) stateLocked() protocol.ServerMessage {
 		})
 	}
 
+	npcs := make([]protocol.NPCState, 0, len(g.npcs))
+
+	for _, npc := range g.npcs {
+		npcs = append(npcs, protocol.NPCState{
+			ID:            npc.ID,
+			X:             npc.X,
+			Y:             npc.Y,
+			Alive:         npc.Alive,
+			ReachedFinish: npc.ReachedFinish,
+		})
+	}
+
 	return protocol.ServerMessage{
 		Type:     "state",
 		Players:  players,
+		NPCs:     npcs,
 		GameOver: g.gameOver,
 		WinnerID: g.winnerID,
 	}
