@@ -8,6 +8,10 @@ extends Node
 @onready var status_label := $"../CanvasLayer/StatusLabel"
 @onready var npcs_root: Node2D = $"../NPCs"
 
+@export var crosshair_scene: PackedScene
+@export var crosshairs_root: Node2D
+var crosshair_nodes := {}
+
 var socket := WebSocketPeer.new()
 var connected := false
 var my_player_id := ""
@@ -49,6 +53,9 @@ func _process(delta):
 
 		if Input.is_action_just_pressed("shoot"):
 			send_shoot()
+		
+		if Input.is_action_just_pressed("restart"):
+			send_restart()
 
 		read_messages()
 
@@ -58,6 +65,16 @@ func _process(delta):
 
 		connected = false
 		status_label.text = "Disconnected"
+
+func send_restart():
+	if not game_over:
+		return
+
+	var msg := {
+		"type": "restart"
+	}
+
+	socket.send_text(JSON.stringify(msg))
 
 func send_shoot():
 	if game_over:
@@ -70,7 +87,7 @@ func send_shoot():
 		status_label.text = "No bullet left."
 		return
 
-	var mouse_pos := get_viewport().get_mouse_position()
+	var mouse_pos: Vector2 = get_parent().get_global_mouse_position()
 
 	var msg := {
 		"type": "shoot",
@@ -84,14 +101,17 @@ func send_input():
 	if game_over:
 		return
 
+	var mouse_pos: Vector2 = get_parent().get_global_mouse_position()
+
 	var msg := {
 		"type": "input",
 		"move_right": Input.is_action_pressed("move_right"),
-		"running": Input.is_action_pressed("run")
+		"running": Input.is_action_pressed("run"),
+		"aim_x": mouse_pos.x,
+		"aim_y": mouse_pos.y
 	}
 
-	var json := JSON.stringify(msg)
-	socket.send_text(json)
+	socket.send_text(JSON.stringify(msg))
 
 func read_messages():
 	while socket.get_available_packet_count() > 0:
@@ -138,6 +158,8 @@ func handle_state(msg: Dictionary):
 		var reached_finish := bool(player_data.get("reached_finish", false))
 		var alive := bool(player_data.get("alive", true))
 		var has_bullet := bool(player_data.get("has_bullet", true))
+		var aim_x := float(player_data.get("aim_x", x))
+		var aim_y := float(player_data.get("aim_y", y))
 
 		if id == my_player_id:
 			my_alive = alive
@@ -160,8 +182,21 @@ func handle_state(msg: Dictionary):
 				alive,
 				has_bullet
 			)
-			
+		if not crosshair_nodes.has(id):
+			spawn_crosshair_node(id)
+
+		var crosshair = crosshair_nodes[id]
+		crosshair.global_position = Vector2(aim_x, aim_y)
+
+		if crosshair.has_method("set_crosshair_data"):
+			crosshair.set_crosshair_data(
+				id,
+				id == my_player_id,
+				alive,
+				has_bullet
+			)
 	remove_missing_players(seen_ids)
+	remove_missing_crosshairs(seen_ids)
 	
 	var npcs: Array = msg.get("npcs", [])
 	handle_npcs_state(npcs)
@@ -210,13 +245,13 @@ func remove_missing_npcs(seen_ids: Dictionary):
 func update_status_text():
 	if game_over:
 		if winner_id == my_player_id:
-			status_label.text = "Victory!"
+			status_label.text = "Victory! Press R to restart."
 		else:
-			status_label.text = "Defeat. Winner: " + winner_id
+			status_label.text = "Defeat. Winner: " + winner_id + ". Press R to restart."
 		return
 
 	if not my_alive:
-		status_label.text = "You are dead."
+		status_label.text = "You are dead. Wait for opponent to finish."
 		return
 
 	status_label.text = "Player: " + my_player_id + " | Bullet: " + ("1" if my_has_bullet else "0")
@@ -236,3 +271,19 @@ func remove_missing_players(seen_ids: Dictionary):
 	for id in ids_to_remove:
 		player_nodes[id].queue_free()
 		player_nodes.erase(id)
+
+func spawn_crosshair_node(id: String):
+	var node = crosshair_scene.instantiate()
+	crosshairs_root.add_child(node)
+	crosshair_nodes[id] = node
+
+func remove_missing_crosshairs(seen_ids: Dictionary):
+	var ids_to_remove := []
+
+	for id in crosshair_nodes.keys():
+		if not seen_ids.has(id):
+			ids_to_remove.append(id)
+
+	for id in ids_to_remove:
+		crosshair_nodes[id].queue_free()
+		crosshair_nodes.erase(id)

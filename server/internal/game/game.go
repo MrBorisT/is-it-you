@@ -13,6 +13,8 @@ const (
 	TickRate  = 20
 	DeltaTime = 1.0 / TickRate
 
+	MaxPlayers = 2
+
 	StartX    = 80.0
 	StartY    = 220.0
 	RowGap    = 50.0
@@ -72,9 +74,13 @@ func (g *Game) spawnNPCs() {
 	}
 }
 
-func (g *Game) AddPlayer(id string) {
+func (g *Game) AddPlayer(id string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+
+	if len(g.players) >= MaxPlayers {
+		return false
+	}
 
 	playerIndex := len(g.players)
 
@@ -82,9 +88,13 @@ func (g *Game) AddPlayer(id string) {
 		ID:        id,
 		X:         StartX,
 		Y:         StartY + float64(playerIndex)*RowGap,
+		AimX:      StartX,
+		AimY:      StartY + float64(playerIndex)*RowGap,
 		Alive:     true,
 		HasBullet: true,
 	}
+
+	return true
 }
 
 func (g *Game) RemovePlayer(id string) {
@@ -98,14 +108,17 @@ func (g *Game) UpdateInput(playerID string, msg protocol.ClientMessage) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	if g.gameOver {
-		return
-	}
-
 	player, ok := g.players[playerID]
 	if !ok {
 		return
 	}
+
+	if g.gameOver {
+		return
+	}
+
+	player.AimX = msg.AimX
+	player.AimY = msg.AimY
 
 	if !player.Alive || player.ReachedFinish {
 		player.MoveRight = false
@@ -157,6 +170,8 @@ func (g *Game) stateLocked() protocol.ServerMessage {
 			ReachedFinish: player.ReachedFinish,
 			Alive:         player.Alive,
 			HasBullet:     player.HasBullet,
+			AimX:          player.AimX,
+			AimY:          player.AimY,
 		})
 	}
 
@@ -179,4 +194,47 @@ func (g *Game) stateLocked() protocol.ServerMessage {
 		GameOver: g.gameOver,
 		WinnerID: g.winnerID,
 	}
+}
+
+func (g *Game) PlayerCount() int {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	return len(g.players)
+}
+
+func (g *Game) RestartRound() bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	if !g.gameOver {
+		return false
+	}
+
+	g.gameOver = false
+	g.winnerID = ""
+
+	i := 0
+	for _, player := range g.players {
+		player.X = StartX
+		player.Y = StartY + float64(i)*RowGap
+
+		player.MoveRight = false
+		player.Running = false
+
+		player.AimX = player.X
+		player.AimY = player.Y
+
+		player.ReachedFinish = false
+		player.Alive = true
+		player.HasBullet = true
+
+		i++
+	}
+
+	// reset NPCs
+	g.npcs = make(map[string]*NPC)
+	g.spawnNPCs()
+
+	return true
 }

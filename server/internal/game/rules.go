@@ -134,8 +134,6 @@ func (g *Game) handleShootLocked(shooterID string, targetX, targetY float64) {
 		hitPlayer.Alive = false
 		hitPlayer.MoveRight = false
 		hitPlayer.Running = false
-
-		g.checkWinAfterKillLocked(shooterID)
 		return
 	}
 

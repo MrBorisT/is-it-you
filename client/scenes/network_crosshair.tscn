@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d0rrqm6bp3if2"]
+
+[ext_resource type="Script" uid="uid://diteru0r7kqlc" path="res://scripts/network_crosshair.gd" id="1_fukyl"]
+
+[node name="NetworkCrosshair" type="Node2D" unique_id=372996550]
+script = ExtResource("1_fukyl")

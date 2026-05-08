@@ -42,6 +42,9 @@ func (c *Client) ReadLoop() {
 		case "shoot":
 			c.handler.game.HandleShoot(c.id, msg)
 
+		case "restart":
+			c.handler.game.RestartRound()
+
 		default:
 			log.Println("unknown message type:", msg.Type)
 		}

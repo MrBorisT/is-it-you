@@ -44,18 +44,27 @@ func (h *Handler) HandleWS(w http.ResponseWriter, r *http.Request) {
 	id := fmt.Sprintf("p%d", h.nextID.Add(1))
 	client := NewClient(id, conn, h)
 
-	h.AddClient(client)
+	if ok := h.AddClient(client); !ok {
+		return
+	}
 
 	go client.WriteLoop()
 	client.ReadLoop()
 }
 
-func (h *Handler) AddClient(c *Client) {
+func (h *Handler) AddClient(c *Client) bool {
+	if ok := h.game.AddPlayer(c.id); !ok {
+		c.SendMessage(protocol.ServerMessage{
+			Type:    "error",
+			Message: "room full",
+		})
+		c.Close()
+		return false
+	}
+
 	h.mu.Lock()
 	h.clients[c.id] = c
 	h.mu.Unlock()
-
-	h.game.AddPlayer(c.id)
 
 	log.Println("client connected:", c.id)
 
@@ -63,6 +72,8 @@ func (h *Handler) AddClient(c *Client) {
 		Type:     "welcome",
 		PlayerID: c.id,
 	})
+
+	return true
 }
 
 func (h *Handler) RemoveClient(id string) {
