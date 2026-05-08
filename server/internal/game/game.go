@@ -6,35 +6,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MrBorisT/is-it-you-server/internal/protocol"
+	"github.com/MrBorisT/is-it-you/server/internal/config"
+	"github.com/MrBorisT/is-it-you/server/internal/protocol"
 )
 
 const (
-	TickRate  = 20
-	DeltaTime = 1.0 / TickRate
-
-	MaxPlayers = 2
-
-	StartX    = 80.0
-	StartY    = 220.0
-	RowGap    = 50.0
-	FinishX   = 900.0
-	WalkSpeed = 80.0
-	RunSpeed  = 180.0
-	HitRadius = 18.0
-
-	NPCCount     = 25
-	NPCWalkSpeed = 55.0
-	NPCMinStep   = 15.0
-	NPCMaxStep   = 70.0
-	NPCMinWait   = 0.3
-	NPCMaxWait   = 1.8
-	NPCMinY      = 140.0
-	NPCMaxY      = 420.0
+	TickRate = 20
 )
 
 type Game struct {
 	mu sync.Mutex
+
+	cfg config.GameConfig
 
 	players map[string]*Player
 	npcs    map[string]*NPC
@@ -45,8 +28,9 @@ type Game struct {
 	rng *rand.Rand
 }
 
-func NewGame() *Game {
+func NewGame(cfg config.GameConfig) *Game {
 	g := &Game{
+		cfg:     cfg,
 		players: make(map[string]*Player),
 		npcs:    make(map[string]*NPC),
 		rng:     rand.New(rand.NewSource(time.Now().UnixNano())),
@@ -58,18 +42,18 @@ func NewGame() *Game {
 }
 
 func (g *Game) spawnNPCs() {
-	for i := 0; i < NPCCount; i++ {
+	for i := 0; i < g.cfg.NPCCount; i++ {
 		id := fmt.Sprintf("n%d", i+1)
 
-		y := NPCMinY + g.rng.Float64()*(NPCMaxY-NPCMinY)
+		y := g.cfg.NPCMinY + g.rng.Float64()*(g.cfg.NPCMaxY-g.cfg.NPCMinY)
 
 		g.npcs[id] = &NPC{
 			ID:        id,
-			X:         StartX,
+			X:         g.cfg.StartX,
 			Y:         y,
 			Alive:     true,
-			TargetX:   StartX,
-			WaitTimer: randomRange(g.rng, NPCMinWait, NPCMaxWait),
+			TargetX:   g.cfg.StartX,
+			WaitTimer: randomRange(g.rng, g.cfg.NPCMinWait, g.cfg.NPCMaxWait),
 		}
 	}
 }
@@ -78,7 +62,7 @@ func (g *Game) AddPlayer(id string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	if len(g.players) >= MaxPlayers {
+	if len(g.players) >= g.cfg.MaxPlayers {
 		return false
 	}
 
@@ -86,10 +70,10 @@ func (g *Game) AddPlayer(id string) bool {
 
 	g.players[id] = &Player{
 		ID:        id,
-		X:         StartX,
-		Y:         StartY + float64(playerIndex)*RowGap,
-		AimX:      StartX,
-		AimY:      StartY + float64(playerIndex)*RowGap,
+		X:         g.cfg.StartX,
+		Y:         g.cfg.StartY + float64(playerIndex)*g.cfg.RowGap,
+		AimX:      g.cfg.StartX,
+		AimY:      g.cfg.StartY + float64(playerIndex)*g.cfg.RowGap,
 		Alive:     true,
 		HasBullet: true,
 	}
@@ -216,8 +200,8 @@ func (g *Game) RestartRound() bool {
 
 	i := 0
 	for _, player := range g.players {
-		player.X = StartX
-		player.Y = StartY + float64(i)*RowGap
+		player.X = g.cfg.StartX
+		player.Y = g.cfg.StartY + float64(i)*g.cfg.RowGap
 
 		player.MoveRight = false
 		player.Running = false
@@ -237,4 +221,8 @@ func (g *Game) RestartRound() bool {
 	g.spawnNPCs()
 
 	return true
+}
+
+func (g *Game) deltaTime() float64 {
+	return 1.0 / float64(g.cfg.TickRate)
 }

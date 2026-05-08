@@ -7,8 +7,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/MrBorisT/is-it-you-server/internal/game"
-	"github.com/MrBorisT/is-it-you-server/internal/protocol"
+	"github.com/MrBorisT/is-it-you/server/internal/game"
+	"github.com/MrBorisT/is-it-you/server/internal/protocol"
 	"github.com/gorilla/websocket"
 )
 

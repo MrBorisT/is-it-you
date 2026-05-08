@@ -14,16 +14,16 @@ func (g *Game) updatePlayersLocked() {
 		}
 
 		if player.MoveRight {
-			speed := WalkSpeed
+			speed := g.cfg.WalkSpeed
 			if player.Running {
-				speed = RunSpeed
+				speed = g.cfg.RunSpeed
 			}
 
-			player.X += speed * DeltaTime
+			player.X += speed * g.deltaTime()
 		}
 
-		if player.X >= FinishX {
-			player.X = FinishX
+		if player.X >= g.cfg.FinishX {
+			player.X = g.cfg.FinishX
 			player.ReachedFinish = true
 			g.gameOver = true
 			g.winnerID = player.ID
@@ -38,20 +38,20 @@ func (g *Game) updateNPCsLocked() {
 			continue
 		}
 
-		if npc.X >= FinishX {
-			npc.X = FinishX
+		if npc.X >= g.cfg.FinishX {
+			npc.X = g.cfg.FinishX
 			npc.ReachedFinish = true
 			continue
 		}
 
 		if !npc.Moving {
-			npc.WaitTimer -= DeltaTime
+			npc.WaitTimer -= g.deltaTime()
 
 			if npc.WaitTimer <= 0 {
-				step := randomRange(g.rng, NPCMinStep, NPCMaxStep)
+				step := randomRange(g.rng, g.cfg.NPCMinStep, g.cfg.NPCMaxStep)
 				npc.TargetX = npc.X + step
-				if npc.TargetX > FinishX {
-					npc.TargetX = FinishX
+				if npc.TargetX > g.cfg.FinishX {
+					npc.TargetX = g.cfg.FinishX
 				}
 				npc.Moving = true
 			}
@@ -59,16 +59,16 @@ func (g *Game) updateNPCsLocked() {
 			continue
 		}
 
-		npc.X += NPCWalkSpeed * DeltaTime
+		npc.X += g.cfg.NPCWalkSpeed * g.deltaTime()
 
 		if npc.X >= npc.TargetX {
 			npc.X = npc.TargetX
 			npc.Moving = false
-			npc.WaitTimer = randomRange(g.rng, NPCMinWait, NPCMaxWait)
+			npc.WaitTimer = randomRange(g.rng, g.cfg.NPCMinWait, g.cfg.NPCMaxWait)
 		}
 
-		if npc.X >= FinishX {
-			npc.X = FinishX
+		if npc.X >= g.cfg.FinishX {
+			npc.X = g.cfg.FinishX
 			npc.ReachedFinish = true
 			npc.Moving = false
 		}
@@ -95,7 +95,7 @@ func (g *Game) handleShootLocked(shooterID string, targetX, targetY float64) {
 
 	shooter.HasBullet = false
 
-	closestDistance := HitRadius * HitRadius
+	closestDistance := g.cfg.HitRadius * g.cfg.HitRadius
 
 	var hitPlayer *Player
 	var hitNPC *NPC

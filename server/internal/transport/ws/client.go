@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/MrBorisT/is-it-you-server/internal/protocol"
+	"github.com/MrBorisT/is-it-you/server/internal/protocol"
 	"github.com/gorilla/websocket"
 )
 

@@ -1,15 +1,25 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 
-	"github.com/MrBorisT/is-it-you-server/internal/game"
-	"github.com/MrBorisT/is-it-you-server/internal/transport/ws"
+	"github.com/MrBorisT/is-it-you/server/internal/config"
+	"github.com/MrBorisT/is-it-you/server/internal/game"
+	"github.com/MrBorisT/is-it-you/server/internal/transport/ws"
 )
 
 func main() {
-	g := game.NewGame()
+	configPath := flag.String("config", "config.cfg", "path to config file")
+	flag.Parse()
+
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		log.Fatal("load config:", err)
+	}
+
+	g := game.NewGame(cfg.Game)
 	handler := ws.NewHandler(g)
 
 	go g.Loop(handler.Broadcast)
@@ -18,8 +28,8 @@ func main() {
 	mux.HandleFunc("/health", healthHandler)
 	mux.HandleFunc("/ws", handler.HandleWS)
 
-	log.Println("server listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Println("server listening on", cfg.Addr())
+	log.Fatal(http.ListenAndServe(cfg.Addr(), mux))
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
