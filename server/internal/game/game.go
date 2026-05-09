@@ -22,7 +22,7 @@ type Game struct {
 	players map[string]*Player
 	npcs    map[string]*NPC
 
-	gameOver bool
+	phase    Phase
 	winnerID string
 
 	rng *rand.Rand
@@ -33,6 +33,7 @@ func NewGame(cfg config.GameConfig) *Game {
 		cfg:     cfg,
 		players: make(map[string]*Player),
 		npcs:    make(map[string]*NPC),
+		phase:   PhaseWaiting,
 		rng:     rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 
@@ -67,18 +68,33 @@ func (g *Game) AddPlayer(id string) bool {
 	}
 
 	playerIndex := len(g.players)
+	y := g.cfg.StartY + float64(playerIndex)*g.cfg.RowGap
 
 	g.players[id] = &Player{
 		ID:        id,
 		X:         g.cfg.StartX,
-		Y:         g.cfg.StartY + float64(playerIndex)*g.cfg.RowGap,
+		Y:         y,
 		AimX:      g.cfg.StartX,
-		AimY:      g.cfg.StartY + float64(playerIndex)*g.cfg.RowGap,
+		AimY:      y,
 		Alive:     true,
 		HasBullet: true,
 	}
 
+	if len(g.players) == g.cfg.MaxPlayers && g.phase == PhaseWaiting {
+		g.startRoundLocked()
+	}
+
 	return true
+}
+
+func (g *Game) startRoundLocked() {
+	g.phase = PhaseRunning
+	g.winnerID = ""
+
+	g.resetPlayersLocked()
+
+	g.npcs = make(map[string]*NPC)
+	g.spawnNPCs()
 }
 
 func (g *Game) RemovePlayer(id string) {
@@ -86,6 +102,16 @@ func (g *Game) RemovePlayer(id string) {
 	defer g.mu.Unlock()
 
 	delete(g.players, id)
+
+	if len(g.players) < g.cfg.MaxPlayers {
+		g.phase = PhaseWaiting
+		g.winnerID = ""
+
+		g.resetPlayersLocked()
+
+		g.npcs = make(map[string]*NPC)
+		g.spawnNPCs()
+	}
 }
 
 func (g *Game) UpdateInput(playerID string, msg protocol.ClientMessage) {
@@ -97,7 +123,9 @@ func (g *Game) UpdateInput(playerID string, msg protocol.ClientMessage) {
 		return
 	}
 
-	if g.gameOver {
+	if g.phase != PhaseRunning {
+		player.MoveRight = false
+		player.Running = false
 		return
 	}
 
@@ -118,6 +146,10 @@ func (g *Game) HandleShoot(shooterID string, msg protocol.ClientMessage) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
+	if g.phase != PhaseRunning {
+		return
+	}
+
 	g.handleShootLocked(shooterID, msg.TargetX, msg.TargetY)
 }
 
@@ -135,7 +167,7 @@ func (g *Game) Tick() protocol.ServerMessage {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	if !g.gameOver {
+	if g.phase == PhaseRunning {
 		g.updateLocked()
 	}
 
@@ -175,7 +207,8 @@ func (g *Game) stateLocked() protocol.ServerMessage {
 		Type:     "state",
 		Players:  players,
 		NPCs:     npcs,
-		GameOver: g.gameOver,
+		Phase:    string(g.phase),
+		GameOver: g.phase == PhaseFinished,
 		WinnerID: g.winnerID,
 	}
 }
@@ -191,17 +224,31 @@ func (g *Game) RestartRound() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	if !g.gameOver {
+	if g.phase != PhaseFinished {
 		return false
 	}
 
-	g.gameOver = false
-	g.winnerID = ""
+	if len(g.players) < g.cfg.MaxPlayers {
+		g.phase = PhaseWaiting
+		g.winnerID = ""
+		return false
+	}
 
+	g.startRoundLocked()
+	return true
+}
+
+func (g *Game) deltaTime() float64 {
+	return 1.0 / float64(g.cfg.TickRate)
+}
+
+func (g *Game) resetPlayersLocked() {
 	i := 0
 	for _, player := range g.players {
+		y := g.cfg.StartY + float64(i)*g.cfg.RowGap
+
 		player.X = g.cfg.StartX
-		player.Y = g.cfg.StartY + float64(i)*g.cfg.RowGap
+		player.Y = y
 
 		player.MoveRight = false
 		player.Running = false
@@ -215,14 +262,4 @@ func (g *Game) RestartRound() bool {
 
 		i++
 	}
-
-	// reset NPCs
-	g.npcs = make(map[string]*NPC)
-	g.spawnNPCs()
-
-	return true
-}
-
-func (g *Game) deltaTime() float64 {
-	return 1.0 / float64(g.cfg.TickRate)
 }

@@ -44,4 +44,5 @@ type ServerMessage struct {
 	GameOver bool          `json:"game_over,omitempty"`
 	WinnerID string        `json:"winner_id,omitempty"`
 	Message  string        `json:"message,omitempty"`
+	Phase    string        `json:"phase,omitempty"`
 }

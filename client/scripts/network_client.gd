@@ -27,6 +27,8 @@ var winner_id := ""
 var my_has_bullet := true
 var my_alive := true
 
+var phase := "waiting"
+
 func _ready():
 	var err := socket.connect_to_url(server_url)
 
@@ -67,7 +69,7 @@ func _process(delta):
 		status_label.text = "Disconnected"
 
 func send_restart():
-	if not game_over:
+	if phase != "finished":
 		return
 
 	var msg := {
@@ -77,7 +79,7 @@ func send_restart():
 	socket.send_text(JSON.stringify(msg))
 
 func send_shoot():
-	if game_over:
+	if phase != "running":
 		return
 
 	if not my_alive:
@@ -98,7 +100,7 @@ func send_shoot():
 	socket.send_text(JSON.stringify(msg))
 
 func send_input():
-	if game_over:
+	if phase != "running":
 		return
 
 	var mouse_pos: Vector2 = get_parent().get_global_mouse_position()
@@ -145,6 +147,7 @@ func handle_welcome(msg: Dictionary):
 func handle_state(msg: Dictionary):
 	var players: Array = msg.get("players", [])
 
+	phase = str(msg.get("phase", "waiting"))
 	game_over = bool(msg.get("game_over", false))
 	winner_id = str(msg.get("winner_id", ""))
 
@@ -243,18 +246,26 @@ func remove_missing_npcs(seen_ids: Dictionary):
 		npc_nodes.erase(id)
 
 func update_status_text():
-	if game_over:
+	if phase == "waiting":
+		status_label.text = "Waiting for second player..."
+		return
+
+	if phase == "finished":
 		if winner_id == my_player_id:
 			status_label.text = "Victory! Press R to restart."
 		else:
 			status_label.text = "Defeat. Winner: " + winner_id + ". Press R to restart."
 		return
 
-	if not my_alive:
-		status_label.text = "You are dead. Wait for opponent to finish."
+	if phase == "running":
+		if not my_alive:
+			status_label.text = "You are dead. Wait for opponent to finish."
+			return
+
+		status_label.text = "Player: " + my_player_id + " | Bullet: " + ("1" if my_has_bullet else "0")
 		return
 
-	status_label.text = "Player: " + my_player_id + " | Bullet: " + ("1" if my_has_bullet else "0")
+	status_label.text = "Unknown phase: " + phase
 
 func spawn_player_node(id: String):
 	var node = player_scene.instantiate()

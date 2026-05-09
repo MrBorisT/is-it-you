@@ -25,8 +25,14 @@ func (g *Game) updatePlayersLocked() {
 		if player.X >= g.cfg.FinishX {
 			player.X = g.cfg.FinishX
 			player.ReachedFinish = true
-			g.gameOver = true
+			g.phase = PhaseFinished
 			g.winnerID = player.ID
+
+			for _, p := range g.players {
+				p.MoveRight = false
+				p.Running = false
+			}
+
 			return
 		}
 	}
@@ -76,7 +82,7 @@ func (g *Game) updateNPCsLocked() {
 }
 
 func (g *Game) handleShootLocked(shooterID string, targetX, targetY float64) {
-	if g.gameOver {
+	if g.phase != PhaseRunning {
 		return
 	}
 
@@ -141,29 +147,6 @@ func (g *Game) handleShootLocked(shooterID string, targetX, targetY float64) {
 		hitNPC.Alive = false
 		hitNPC.Moving = false
 		return
-	}
-}
-
-func (g *Game) checkWinAfterKillLocked(killerID string) {
-	aliveCount := 0
-	lastAliveID := ""
-
-	for _, player := range g.players {
-		if player.Alive && !player.ReachedFinish {
-			aliveCount++
-			lastAliveID = player.ID
-		}
-	}
-
-	if aliveCount == 1 {
-		g.gameOver = true
-		g.winnerID = lastAliveID
-		return
-	}
-
-	if aliveCount == 0 {
-		g.gameOver = true
-		g.winnerID = killerID
 	}
 }
 
