@@ -8,27 +8,90 @@
 
 [node name="NetworkTest" type="Node2D" unique_id=619399765]
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=528133280]
-
-[node name="StatusLabel" type="Label" parent="CanvasLayer" unique_id=1923285731]
-offset_left = 20.0
-offset_top = 20.0
-offset_right = 266.0
-offset_bottom = 43.0
-text = "Reach the finish. Don't get shot."
-
-[node name="NetworkClient" type="Node" parent="." unique_id=2082303623 node_paths=PackedStringArray("crosshairs_root")]
-script = ExtResource("1_y54cu")
-player_scene = ExtResource("4_h52vw")
-npc_scene = ExtResource("3_502go")
-crosshair_scene = ExtResource("4_502go")
-crosshairs_root = NodePath("../Crosshairs")
-
 [node name="Players" type="Node2D" parent="." unique_id=614451012]
 
 [node name="NPCs" type="Node2D" parent="." unique_id=1188207920]
 
+[node name="Crosshairs" type="Node2D" parent="." unique_id=1247115932]
+
+[node name="NetworkClient" type="Node" parent="." unique_id=2082303623 node_paths=PackedStringArray("players_root", "npcs_root", "crosshairs_root", "status_label", "bullet_label", "help_label", "host_info_label", "debug_label")]
+script = ExtResource("1_y54cu")
+player_scene = ExtResource("4_h52vw")
+npc_scene = ExtResource("3_502go")
+crosshair_scene = ExtResource("4_502go")
+players_root = NodePath("../Players")
+npcs_root = NodePath("../NPCs")
+crosshairs_root = NodePath("../Crosshairs")
+status_label = NodePath("../CanvasLayer/UI/TopLeftPanel/VBoxContainer/StatusLabel")
+bullet_label = NodePath("../CanvasLayer/UI/TopRightPanel/VBoxContainer/BulletLabel")
+help_label = NodePath("../CanvasLayer/UI/TopLeftPanel/VBoxContainer/HelpLabel")
+host_info_label = NodePath("../CanvasLayer/UI/TopLeftPanel/VBoxContainer/HostInfoLabel")
+debug_label = NodePath("../CanvasLayer/UI/TopLeftPanel/VBoxContainer/DebugLabel")
+
 [node name="FinishNode" type="Node2D" parent="." unique_id=1132831445]
 script = ExtResource("3_y54cu")
 
-[node name="Crosshairs" type="Node2D" parent="." unique_id=1247115932]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=528133280]
+
+[node name="UI" type="Control" parent="CanvasLayer" unique_id=817845963]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopLeftPanel" type="MarginContainer" parent="CanvasLayer/UI" unique_id=1337889225]
+layout_mode = 1
+anchors_preset = -1
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 520.0
+offset_bottom = 180.0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/UI/TopLeftPanel" unique_id=1154547874]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="StatusLabel" type="Label" parent="CanvasLayer/UI/TopLeftPanel/VBoxContainer" unique_id=1040074332]
+custom_minimum_size = Vector2(300, 30)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="HelpLabel" type="Label" parent="CanvasLayer/UI/TopLeftPanel/VBoxContainer" unique_id=1573704540]
+custom_minimum_size = Vector2(300, 30)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="HostInfoLabel" type="Label" parent="CanvasLayer/UI/TopLeftPanel/VBoxContainer" unique_id=204764110]
+custom_minimum_size = Vector2(300, 30)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="DebugLabel" type="Label" parent="CanvasLayer/UI/TopLeftPanel/VBoxContainer" unique_id=2077847927]
+layout_mode = 2
+
+[node name="TopRightPanel" type="MarginContainer" parent="CanvasLayer/UI" unique_id=5432099]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -260.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 100.0
+grow_horizontal = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/UI/TopRightPanel" unique_id=307107488]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PhaseLabel" type="Label" parent="CanvasLayer/UI/TopRightPanel/VBoxContainer" unique_id=914848026]
+layout_mode = 2
+
+[node name="BulletLabel" type="Label" parent="CanvasLayer/UI/TopRightPanel/VBoxContainer" unique_id=507576442]
+layout_mode = 2

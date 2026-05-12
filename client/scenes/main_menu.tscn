@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://dap31c2gc21c"]
+
+[ext_resource type="Script" uid="uid://dfr6ionqgd4sn" path="res://scripts/main_menu.gd" id="1_l6cm7"]
+
+[node name="MainMenu" type="Control" unique_id=1999373054]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_l6cm7")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1096042482]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer" unique_id=75419085]
+layout_mode = 2
+text = "IS IT YOU?!"
+
+[node name="IPLineEdit" type="LineEdit" parent="VBoxContainer" unique_id=1254483093]
+layout_mode = 2
+placeholder_text = "IP Address"
+
+[node name="PortLineEdit" type="LineEdit" parent="VBoxContainer" unique_id=1883100352]
+layout_mode = 2
+placeholder_text = "Port"
+
+[node name="HostButton" type="Button" parent="VBoxContainer" unique_id=1035250375]
+layout_mode = 2
+text = "HOST GAME"
+
+[node name="JoinButton" type="Button" parent="VBoxContainer" unique_id=594312639]
+layout_mode = 2
+text = "JOIN GAME"
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer" unique_id=1632123604]
+layout_mode = 2
+text = "status"

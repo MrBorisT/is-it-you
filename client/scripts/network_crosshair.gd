@@ -18,22 +18,32 @@ func _draw():
 
 	var color := Color.RED
 
-	if is_me:
-		color = Color.GREEN
+	if AppState.debug_mode:
+		if is_me:
+			color = Color.GREEN
 
-	if not has_bullet:
-		color = Color.GRAY
+		if not has_bullet:
+			color = Color.GRAY
+	else:
+		if is_me:
+			color = Color.WHITE
+		else:
+			color = Color.RED
+
+		if not has_bullet:
+			color = Color.GRAY
 
 	draw_line(Vector2(-8, 0), Vector2(8, 0), color, 2)
 	draw_line(Vector2(0, -8), Vector2(0, 8), color, 2)
 	draw_circle(Vector2.ZERO, 12, color, false, 2)
 
-	draw_string(
-		ThemeDB.fallback_font,
-		Vector2(14, -10),
-		owner_id,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1,
-		12,
-		color
-	)
+	if AppState.debug_mode:
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(14, -10),
+			owner_id,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1,
+			12,
+			color
+		)

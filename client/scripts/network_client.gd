@@ -1,35 +1,42 @@
 extends Node
 
 @export var server_url := "ws://localhost:8080/ws"
+
 @export var player_scene: PackedScene
 @export var npc_scene: PackedScene
-
-@onready var players_root := $"../Players"
-@onready var status_label := $"../CanvasLayer/StatusLabel"
-@onready var npcs_root: Node2D = $"../NPCs"
-
 @export var crosshair_scene: PackedScene
+
+@export var players_root: Node2D
+@export var npcs_root: Node2D
 @export var crosshairs_root: Node2D
-var crosshair_nodes := {}
+
+@export var status_label: Label
+@export var bullet_label: Label
+@export var help_label: Label
+@export var host_info_label: Label
+@export var debug_label: Label
 
 var socket := WebSocketPeer.new()
 var connected := false
 var my_player_id := ""
 
-var player_nodes := {}
-var npc_nodes := {}
-
-@export var finish_x := 900.0
-
+var phase := "waiting"
 var game_over := false
 var winner_id := ""
 
 var my_has_bullet := true
 var my_alive := true
 
-var phase := "waiting"
+var player_nodes := {}
+var npc_nodes := {}
+var crosshair_nodes := {}
 
 func _ready():
+	if AppState.server_url != "":
+		server_url = AppState.server_url
+
+	setup_static_ui()
+
 	var err := socket.connect_to_url(server_url)
 
 	if err != OK:
@@ -37,10 +44,72 @@ func _ready():
 		print("WebSocket connect error:", err)
 		return
 
-	status_label.text = "Connecting..."
+	status_label.text = "Connecting to " + server_url
 	print("Connecting to server:", server_url)
 
+func setup_static_ui():
+	if help_label != null:
+		help_label.text = "D: move right | Shift: run | Left Click: shoot | R: restart | F3: debug"
+
+	if host_info_label != null:
+		if AppState.is_host:
+			host_info_label.text = build_host_info_text()
+		else:
+			host_info_label.text = "Connected to: " + server_url
+
+	update_debug_label()
+	update_bullet_label()
+
+func build_host_info_text() -> String:
+	var port := extract_port_from_server_url(server_url)
+	var addresses := IP.get_local_addresses()
+	var useful := []
+
+	for address in addresses:
+		if address.begins_with("192.168.") or address.begins_with("10.") or address.begins_with("172."):
+			useful.append(address)
+
+	if useful.size() == 0:
+		return "You are host. Could not detect LAN IP. Port: " + port
+
+	var lines := ["You are host. Friend can join:"]
+	for ip in useful:
+		lines.append(ip + ":" + port)
+
+	return "\n".join(lines)
+
+func update_debug_label():
+	if debug_label == null:
+		return
+
+	debug_label.text = "Debug: " + ("ON" if AppState.debug_mode else "OFF") + " [F3]"
+
+func redraw_all_visuals():
+	for node in player_nodes.values():
+		node.queue_redraw()
+
+	for node in npc_nodes.values():
+		node.queue_redraw()
+
+	for node in crosshair_nodes.values():
+		node.queue_redraw()
+
+func extract_port_from_server_url(url: String) -> String:
+	# Expected format: ws://127.0.0.1:8080/ws
+	var without_scheme := url.replace("ws://", "").replace("wss://", "")
+	var parts := without_scheme.split("/")[0].split(":")
+
+	if parts.size() >= 2:
+		return parts[1]
+
+	return "8080"
+
 func _process(delta):
+	if Input.is_action_just_pressed("debug_toggle"):
+		AppState.toggle_debug_mode()
+		update_debug_label()
+		redraw_all_visuals()
+
 	socket.poll()
 
 	var state := socket.get_ready_state()
@@ -55,7 +124,7 @@ func _process(delta):
 
 		if Input.is_action_just_pressed("shoot"):
 			send_shoot()
-		
+
 		if Input.is_action_just_pressed("restart"):
 			send_restart()
 
@@ -86,7 +155,6 @@ func send_shoot():
 		return
 
 	if not my_has_bullet:
-		status_label.text = "No bullet left."
 		return
 
 	var mouse_pos: Vector2 = get_parent().get_global_mouse_position()
@@ -246,26 +314,39 @@ func remove_missing_npcs(seen_ids: Dictionary):
 		npc_nodes.erase(id)
 
 func update_status_text():
+	if status_label == null:
+		return
+
 	if phase == "waiting":
 		status_label.text = "Waiting for second player..."
-		return
-
-	if phase == "finished":
+	elif phase == "finished":
 		if winner_id == my_player_id:
-			status_label.text = "Victory! Press R to restart."
+			status_label.text = "Victory! You reached the finish. Press R to restart."
 		else:
 			status_label.text = "Defeat. Winner: " + winner_id + ". Press R to restart."
-		return
-
-	if phase == "running":
+	elif phase == "running":
 		if not my_alive:
-			status_label.text = "You are dead. Wait for opponent to finish."
-			return
+			status_label.text = "You are dead. Wait for opponent to reach the finish."
+		else:
+			status_label.text = "Reach the finish alive."
+	else:
+		status_label.text = "Unknown phase: " + phase
 
-		status_label.text = "Player: " + my_player_id + " | Bullet: " + ("1" if my_has_bullet else "0")
+	update_bullet_label()
+
+func update_bullet_label():
+	if bullet_label == null:
 		return
 
-	status_label.text = "Unknown phase: " + phase
+	if phase != "running":
+		bullet_label.text = ""
+		return
+
+	if not my_alive:
+		bullet_label.text = ""
+		return
+
+	bullet_label.text = "Bullet: " + ("1" if my_has_bullet else "0")
 
 func spawn_player_node(id: String):
 	var node = player_scene.instantiate()

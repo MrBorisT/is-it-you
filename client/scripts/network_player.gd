@@ -26,32 +26,40 @@ func set_player_data(
 func _draw():
 	var color := Color.WHITE
 
-	if is_me:
-		color = Color.GREEN
+	if AppState.debug_mode:
+		if is_me:
+			color = Color.GREEN
 
-	if is_running:
-		color = Color.RED
+		if is_running:
+			color = Color.RED
 
-	if reached_finish:
-		color = Color.GOLD
+		if reached_finish:
+			color = Color.GOLD
 
-	if not alive:
-		color = Color.DARK_RED
+		if not alive:
+			color = Color.DARK_RED
+	else:
+		if not alive:
+			color = Color.DARK_RED
+		else:
+			color = Color.WHITE
 
 	draw_circle(Vector2.ZERO, 12, color)
 	draw_circle(Vector2.ZERO, 4, Color.BLACK)
 
-	if not has_bullet and alive:
-		draw_circle(Vector2(12, -12), 3, Color.GRAY)
-	elif has_bullet and alive:
-		draw_circle(Vector2(12, -12), 3, Color.YELLOW)
+	if AppState.debug_mode:
+		if alive:
+			if has_bullet:
+				draw_circle(Vector2(12, -12), 3, Color.YELLOW)
+			else:
+				draw_circle(Vector2(12, -12), 3, Color.GRAY)
 
-	draw_string(
-		ThemeDB.fallback_font,
-		Vector2(-12, -18),
-		player_id,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1,
-		12,
-		Color.WHITE
-	)
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(-12, -18),
+			player_id,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1,
+			12,
+			Color.WHITE
+		)
